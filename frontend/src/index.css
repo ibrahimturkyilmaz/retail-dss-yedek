@@ -1,8 +1,168 @@
 @import "tailwindcss";
-
 @plugin "tailwindcss-animate";
 
-/* Custom Leaflet Map Container Style */
+:root {
+  --background: 255 255 255;
+  --foreground: 15 23 42;
+  --card: 255 255 255;
+  --card-foreground: 15 23 42;
+  --popover: 255 255 255;
+  --popover-foreground: 15 23 42;
+  --primary: 59 130 246;
+  --primary-foreground: 255 255 255;
+  --muted: 241 245 249;
+  --muted-foreground: 100 116 139;
+  --border: 226 232 240;
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-hover: rgba(255, 255, 255, 0.8);
+  --widget-shadow: rgba(148, 163, 184, 0.15);
+}
+
+.dark {
+  --background: 15 23 42;
+  --foreground: 226 232 240;
+  --card: 30 41 59;
+  --card-foreground: 226 232 240;
+  --popover: 15 23 42;
+  --popover-foreground: 226 232 240;
+  --primary: 96 165 250;
+  --primary-foreground: 15 23 42;
+  --muted: 30 41 59;
+  --muted-foreground: 148 163 184;
+  --border: 51 65 85;
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(51, 65, 85, 0.5);
+  --glass-hover: rgba(30, 41, 59, 0.9);
+  --widget-shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* ═══════════════════════════════════════
+   BODY — Light / Dark Mode
+   ═══════════════════════════════════════ */
+body {
+  @apply bg-slate-50 text-slate-900 transition-colors duration-500;
+}
+
+.dark body,
+html.dark body {
+  @apply bg-slate-950 text-slate-200;
+}
+
+/* ═══════════════════════════════════════
+   GLASSMORPHISM UTILITIES — Dark mode aware
+   ═══════════════════════════════════════ */
+.glass-card {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ═══════════════════════════════════════
+   WIDGET DARK MODE OVERRIDES
+   ═══════════════════════════════════════ */
+/* White/60 cards → slate-800/60 in dark */
+.dark .bg-white\/60 {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border-color: rgba(51, 65, 85, 0.4) !important;
+}
+
+.dark .bg-white\/40 {
+  background: rgba(30, 41, 59, 0.5) !important;
+  border-color: rgba(51, 65, 85, 0.3) !important;
+}
+
+.dark .bg-white\/50 {
+  background: rgba(30, 41, 59, 0.55) !important;
+  border-color: rgba(51, 65, 85, 0.35) !important;
+}
+
+.dark .bg-white\/80 {
+  background: rgba(30, 41, 59, 0.8) !important;
+}
+
+/* Text overrides for dark mode */
+.dark .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-900 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Background overrides */
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+  background-color: rgb(15, 23, 42) !important;
+}
+
+/* Card backgrounds */
+.dark .bg-red-50\/50 {
+  background: rgba(127, 29, 29, 0.15) !important;
+}
+
+.dark .bg-green-50\/60 {
+  background: rgba(20, 83, 45, 0.15) !important;
+}
+
+.dark .bg-white {
+  background: rgb(30, 41, 59) !important;
+}
+
+/* Border overrides */
+.dark .border-white\/60,
+.dark .border-white\/40,
+.dark .border-white\/50 {
+  border-color: rgba(51, 65, 85, 0.4) !important;
+}
+
+.dark .border-slate-100,
+.dark .border-slate-200 {
+  border-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+/* Shadow overrides */
+.dark .shadow-lg {
+  --tw-shadow-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .shadow-xl {
+  --tw-shadow-color: rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .shadow-slate-200 {
+  --tw-shadow-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .shadow-slate-200\/50 {
+  --tw-shadow-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Hover state overrides */
+.dark .hover\:bg-white\/80:hover {
+  background: rgba(30, 41, 59, 0.85) !important;
+}
+
+/* ═══════════════════════════════════════
+   AI VOICE PANEL — stays dark (fine in both)
+   ═══════════════════════════════════════ */
+
+/* ═══════════════════════════════════════
+   LEAFLET MAP — Dark Mode
+   ═══════════════════════════════════════ */
 .leaflet-container {
   width: 100%;
   height: 100%;
@@ -10,7 +170,46 @@
   z-index: 10;
 }
 
-/* Kırmızı yanıp sönen animasyon (Riskli stok için) */
+.dark .leaflet-container {
+  filter: brightness(0.8) contrast(1.1) saturate(0.8);
+}
+
+/* ═══════════════════════════════════════
+   SCROLLBAR — Dark Mode
+   ═══════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* ═══════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════ */
 @keyframes pulse-red {
   0% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
@@ -25,7 +224,6 @@
   }
 }
 
-/* Yol animasyonu (Polyline) */
 @keyframes dash {
   to {
     stroke-dashoffset: -20;
@@ -34,4 +232,55 @@
 
 .animate-dash {
   animation: dash 1s linear infinite;
+}
+
+/* ═══════════════════════════════════════
+   DARK MODE TRANSITION (smooth switch)
+   ═══════════════════════════════════════ */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 0.3s;
+  transition-timing-function: ease-in-out;
+}
+
+/* Override for elements that need instant transition */
+button,
+a,
+input,
+.animate-in,
+.animate-bounce,
+.animate-pulse,
+.animate-dash,
+[class*="transition-"],
+.recharts-surface,
+.recharts-wrapper {
+  transition-duration: 0s !important;
+}
+
+/* Re-enable transitions for theme-related elements */
+button,
+a {
+  transition-property: background-color, border-color, color, transform, opacity !important;
+  transition-duration: 0.2s !important;
+}
+
+/* ═══════════════════════════════════════
+   RECHARTS — Dark Mode
+   ═══════════════════════════════════════ */
+.dark .recharts-cartesian-axis-tick-value {
+  fill: #94a3b8 !important;
+}
+
+.dark .recharts-cartesian-grid line {
+  stroke: #334155 !important;
+}
+
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .recharts-legend-item-text {
+  color: #94a3b8 !important;
 }

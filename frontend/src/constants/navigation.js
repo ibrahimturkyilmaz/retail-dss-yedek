@@ -4,7 +4,8 @@ import {
     TruckIcon,
     ChartBarIcon,
     Cog6ToothIcon,
-    BoltIcon
+    BoltIcon,
+    CalendarDaysIcon,
 } from '@heroicons/react/24/outline';
 
 // Menü yapısını buradan kolayca değiştirebilirsiniz.
@@ -13,6 +14,11 @@ export const NAVIGATION_ITEMS = [
         name: 'Genel Bakış',
         path: '/',
         icon: HomeIcon,
+    },
+    {
+        name: 'Takvim',
+        path: '/calendar',
+        icon: CalendarDaysIcon,
     },
     {
         name: 'Simülasyon',
@@ -30,7 +36,7 @@ export const NAVIGATION_ITEMS = [
         icon: TruckIcon,
     },
     {
-        name: 'Analizler',
+        name: 'Analiz & Tahmin',
         path: '/analytics',
         icon: ChartBarIcon,
     },

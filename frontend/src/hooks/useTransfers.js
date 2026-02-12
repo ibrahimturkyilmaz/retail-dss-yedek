@@ -12,7 +12,7 @@ const executeTransfer = async (transferData) => {
     const { data } = await axiosClient.post('/api/transfer', {
         source_store_id: transferData.source.id,
         target_store_id: transferData.target.id,
-        product_id: null, // Şimdilik basitleştirilmiş demo modu (backend id istemiyor)
+        product_id: transferData.product_id,
         amount: transferData.amount
     });
     return data;

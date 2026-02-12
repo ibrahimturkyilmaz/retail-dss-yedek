@@ -11,6 +11,11 @@ const fetchRecentSales = async () => {
     return data;
 };
 
+const fetchForecasts = async () => {
+    const { data } = await axiosClient.get('/api/forecast');
+    return data;
+};
+
 export const useDashboardStats = () => {
     return useQuery({
         queryKey: ['dashboard-stats'],
@@ -24,5 +29,13 @@ export const useRecentSales = () => {
         queryKey: ['recent-sales'],
         queryFn: fetchRecentSales,
         staleTime: 1000 * 30, // 30 saniye
+    });
+};
+
+export const useForecasts = () => {
+    return useQuery({
+        queryKey: ['forecasts'],
+        queryFn: fetchForecasts,
+        staleTime: 1000 * 60,
     });
 };

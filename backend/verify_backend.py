@@ -2,6 +2,8 @@ from database import SessionLocal
 from models import Store, Inventory, Product
 from risk_engine import analyze_store_risk, get_risk_report
 from transfer_engine import generate_transfer_recommendations
+from analysis_engine import calculate_abc_analysis
+from cold_start_engine import analyze_cold_start
 
 def verify_backend():
     print("--- Backend Verification Start ---")
@@ -40,11 +42,31 @@ def verify_backend():
 
         # 4. Check Transfer Engine
         print("\nTesting Transfer Engine (Robin Hood)...")
-        recommendations = generate_transfer_recommendations(stores)
+        recommendations = generate_transfer_recommendations(db, stores)
         print(f"Recommendations Generated: {len(recommendations)}")
         if len(recommendations) > 0:
             print(f"Sample Rec: {recommendations[0]['reasons']}")
         
+        if len(recommendations) > 0:
+            print(f"Sample Rec: {recommendations[0]['reasons']}")
+
+        # 5. Check Analysis Engine (ABC Analysis)
+        print("\nTesting Analysis Engine (ABC Analysis)...")
+        abc_result = calculate_abc_analysis(db)
+        print(f"ABC Analysis Result: {abc_result}")
+        
+        # 6. Check Cold Start Engine
+        print("\nTesting Cold Start Engine...")
+        if len(products) > 0:
+            sample_product_id = products[0].id
+            try:
+                cold_start_res = analyze_cold_start(db, product_id=sample_product_id)
+                print(f"Cold Start Analysis for Product {sample_product_id}: {cold_start_res.get('status', 'Unknown')}")
+            except Exception as cs_error:
+                print(f"Cold Start Error: {cs_error}")
+        else:
+            print("Skipping Cold Start (No products)")
+
         print("\n--- Backend Verification PASS ---")
         
     except Exception as e:

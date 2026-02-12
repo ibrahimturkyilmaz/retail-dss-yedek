@@ -7,11 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
   ],
-  css: {
-    postcss: {
-      plugins: [
-        tailwindcss(),
-      ],
-    },
+  optimizeDeps: {
+    include: ['react-window', 'react-virtualized-auto-sizer'],
   },
 })

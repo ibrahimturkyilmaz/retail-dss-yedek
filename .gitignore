@@ -18,8 +18,19 @@ build/
 
 # Custom
 *.log
+backend_error.txt
+backend_log.txt
+output.txt
+api_test_report.txt
+
+# Backup & Temp Files
+*.bak
+*.tmdx
+retail.db
+*.pdf
+frontend-icin-ornek-gorsel/
 
 # Sensitive/Large Files
 END401*.pdf
 Ibrahim-Turkyilmaz*.pdf
-frontend-icin-ornek-gorsel/
+frontend/build_final_error.txt

@@ -4,54 +4,19 @@ import faker
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, Store, Product, Customer, Sale, StoreType, Inventory
-import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+from core.config import settings
 
-import os
-
-# Konfigürasyon
-POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "12345")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
-DB_NAME = os.getenv("DB_NAME", "retail_dss")
+# Veritabanı Yapılandırması
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
 fake = faker.Faker('tr_TR')
 
-def create_database():
-    try:
-        con = psycopg2.connect(
-            dbname="postgres",
-            user=POSTGRES_USER,
-            password=POSTGRES_PASSWORD,
-            host=POSTGRES_HOST,
-            port=POSTGRES_PORT
-        )
-        con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-        cur = con.cursor()
-        
-        cur.execute(f"SELECT 1 FROM pg_catalog.pg_database WHERE datname = '{DB_NAME}'")
-        exists = cur.fetchone()
-        
-        if not exists:
-            print(f"'{DB_NAME}' veritabanı oluşturuluyor...")
-            cur.execute(f"CREATE DATABASE {DB_NAME}")
-            print(f"'{DB_NAME}' başarıyla oluşturuldu.")
-        else:
-            print(f"'{DB_NAME}' zaten mevcut.")
-            
-        cur.close()
-        con.close()
-    except Exception as e:
-        print(f"Veritabanı oluşturma hatası: {e}")
-
 def seed_data():
-    DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{DB_NAME}"
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     
-    print("Tablolar oluşturuluyor...")
-    Base.metadata.drop_all(bind=engine) # Temiz başlangıç için tabloları sil
+    print("Tablolar oluşturuluyor (SQLite)...")
+    Base.metadata.drop_all(bind=engine) # Temiz başlangıç
     Base.metadata.create_all(bind=engine)
     
     db = SessionLocal()
@@ -218,5 +183,4 @@ def seed_data():
     db.close()
 
 if __name__ == "__main__":
-    create_database()
     seed_data()
