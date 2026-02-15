@@ -13,6 +13,7 @@ import Simulations from './pages/Simulations';
 // Placeholder Pages
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import SqlPlayground from './components/SqlPlayground';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             <Route path="stores" element={<Stores />} />
             <Route path="transfers" element={<Transfers />} />
             <Route path="analytics" element={<Analytics />} />
+            <Route path="playground" element={<SqlPlayground />} />
             <Route path="settings" element={<Settings />} />
 
             {/* 404 - Redirect to Dashboard */}

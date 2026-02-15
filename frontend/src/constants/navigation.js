@@ -6,6 +6,7 @@ import {
     Cog6ToothIcon,
     BoltIcon,
     CalendarDaysIcon,
+    CommandLineIcon,
 } from '@heroicons/react/24/outline';
 
 // Menü yapısını buradan kolayca değiştirebilirsiniz.
@@ -39,6 +40,11 @@ export const NAVIGATION_ITEMS = [
         name: 'Analiz & Tahmin',
         path: '/analytics',
         icon: ChartBarIcon,
+    },
+    {
+        name: 'SQL Oyun Alanı',
+        path: '/playground',
+        icon: CommandLineIcon,
     },
 ];
 

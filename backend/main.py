@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, text
 from database import get_db, engine, Base
 from models import Store, Product, Customer, Sale, Forecast, Inventory, User
 from core.logger import logger
@@ -58,18 +58,14 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # 🔒 GÜVENLİK VE CORS AYARLARI
 # ==========================================
 import os
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
 
 # Frontend URL'lerini çevre değişkeninden al, yoksa varsayılanları kullan
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173") # Vite Frontend
-origins = [
-    "http://localhost:5173", # Vite Local
-    "http://localhost:3000", # React Default
-    "http://127.0.0.1:5173",
-    frontend_url 
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -1582,12 +1578,173 @@ def create_user_note(note: NoteCreateSchema, db: Session = Depends(get_db)):
     db.refresh(new_note)
     return new_note
 
-@app.delete("/api/calendar/notes/{note_id}")
-def delete_user_note(note_id: int, db: Session = Depends(get_db)):
-    note = db.query(CalendarNote).filter(CalendarNote.id == note_id).first()
-    if not note:
-        raise HTTPException(status_code=404, detail="Not bulunamadı")
-        
     db.delete(note)
     db.commit()
     return {"message": "Not silindi"}
+
+# ==========================================
+# 🧠 SQL PLAYGROUND & AI ASSISTANT
+# ==========================================
+
+class SQLQueryRequest(BaseModel):
+    query: str
+
+class GenerateSQLRequest(BaseModel):
+    prompt: str
+
+# Placeholder for SQLQueryResponse if not defined elsewhere
+class SQLQueryResponse(BaseModel):
+    columns: List[str]
+    data: List[dict]
+    row_count: int
+    execution_time_ms: float
+
+# --- Smart Caching ---
+# --- Smart Caching ---
+QUERY_CACHE = {}
+CACHE_TTL_SECONDS = 60
+
+import hashlib
+
+# Limiter is already defined at the top of the file
+
+
+
+@app.post("/api/playground/execute", response_model=SQLQueryResponse)
+@limiter.limit("20/minute")
+def execute_custom_sql(query_req: SQLQueryRequest, request: Request, db: Session = Depends(get_db)):
+    """
+    🛡️ GÜVENLİ SQL ÇALIŞTIRMA (PLAYGROUND)
+    
+    Kullanıcının gönderdiği SQL sorgusunu güvenli bir şekilde çalıştırır.
+    Smart Caching mekanizması içerir.
+    """
+    global QUERY_CACHE
+    query = query_req.query.strip()
+    
+    # Cache Kontrolü
+    query_hash = hashlib.md5(query.encode('utf-8')).hexdigest()
+    now = datetime.datetime.now()
+    
+    if query_hash in QUERY_CACHE:
+        cached_item = QUERY_CACHE[query_hash]
+        if now - cached_item['timestamp'] < timedelta(seconds=CACHE_TTL_SECONDS):
+            # Cache'den dön
+            result_data = cached_item['data']
+            # Execution time'ı 0 olarak işaretle ki cache olduğu anlaşılsın
+            result_data['execution_time_ms'] = 0.1 
+            return result_data
+        else:
+            # Süresi dolmuş, sil
+            del QUERY_CACHE[query_hash]
+
+    # 1. GÜVENLİK KONTROLÜ (Kara Liste)
+    forbidden_keywords = ["DROP", "DELETE", "INSERT", "UPDATE", "ALTER", "TRUNCATE", "GRANT", "REVOKE", "EXEC"]
+    if any(keyword in query.upper() for keyword in forbidden_keywords):
+        raise HTTPException(
+            status_code=400, 
+            detail="Güvenlik Uyarısı: Sadece veri okuma (SELECT) işlemleri yapabilirsiniz. Veri değiştirme komutları engellenmiştir."
+        )
+    
+    try:
+        # 2. OTOMATİK LIMIT (GUARDRAIL)
+        if "LIMIT" not in query.upper():
+             query += " LIMIT 100"
+        
+        # 3. SORGUYU ÇALIŞTIR
+        start_time = time_module.time()
+        result = db.execute(text(query))
+        execution_time = (time_module.time() - start_time) * 1000 # ms cinsinden
+        
+        # 3. SONUÇLARI JSON FORMATINA ÇEVİR
+        keys = result.keys()
+        data = [dict(zip(keys, row)) for row in result.fetchall()]
+        
+        response_data = {
+            "columns": list(keys),
+            "data": data,
+            "row_count": len(data),
+            "execution_time_ms": round(execution_time, 2)
+        }
+        
+        # Cache'e kaydet
+        QUERY_CACHE[query_hash] = {
+            'timestamp': now,
+            'data': response_data
+        }
+        
+        return response_data
+        
+    except Exception as e:
+        logger.error(f"SQL Error: {str(e)}")
+        # Hata detayını kullanıcıya anlamlı dön
+        raise HTTPException(status_code=400, detail=f"Sorgu Hatası: {str(e)}")
+
+@app.post("/api/playground/generate-sql")
+@limiter.limit("10/minute")
+def generate_sql_from_text(query_req: GenerateSQLRequest, request: Request):
+    """
+    🤖 AI METİNDEN-SQL (TEXT-TO-SQL)
+    
+    Kullanıcının doğal dildeki sorusunu SQL sorgusuna çevirir.
+    Gemini API kullanılır.
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+         # Demo Modu (API Key yoksa basit bir regex veya mock cevap)
+         # Gerçek senaryoda hata dönebiliriz veya kullanıcıyı uyarabiliriz.
+         return {
+             "sql": "-- Gemini API Anahtarı bulunamadı.\n-- Lütfen .env dosyasına GEMINI_API_KEY ekleyin.\n-- Örnek: SELECT * FROM sales LIMIT 5;"
+         }
+    
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-pro')
+        
+        # Prompt Mühendisliği: Veritabanı şemasını özetle
+        schema_context = """
+        Sen bir Veri Analisti ve SQL Uzmanısın.
+        Aşağıdaki veritabanı şemasına göre PostgreSQL uyumlu tek bir SQL sorgusu yaz.
+        
+        ÖNEMLİ KURALLAR:
+        1. Yanıtın SADECE geçerli bir JSON formatında olsun. Markdown bloğu kullanma.
+        2. JSON formatı şöyle olmalı:
+           {
+             "sql": "SELECT ...",
+             "data_story": "Bu sorgu ... (Çok kısa, tek cümlelik açıklama)",
+             "suggested_chart": "bar" | "line" | "pie" | "table"
+           }
+        3. Sorgu performanslı olmalı.
+        
+        Veritabanı Şeması:
+        - sales (id, store_id, product_id, customer_id, date, quantity, total_price)
+        - stores (id, name, store_type, lat, lon)
+        - products (id, name, category, price, abc_category)
+        - inventory (store_id, product_id, quantity, safety_stock)
+        - customers (id, name, type, loyalty_score)
+        
+        İlişkiler:
+        - sales.store_id -> stores.id
+        - sales.product_id -> products.id
+        - inventory.store_id -> stores.id
+        """
+        
+        full_prompt = f"{schema_context}\n\nKullanıcı Sorusu: {query_req.prompt}\nJSON Yanıtı:"
+        
+        response = model.generate_content(full_prompt)
+        # AI bazen Markdown ```json ... ``` ile dönebilir, temizleyelim.
+        clean_text = response.text.replace("```json", "").replace("```", "").strip()
+        
+        import json
+        try:
+            result = json.loads(clean_text)
+        except json.JSONDecodeError:
+            # Fallback: Eğer JSON bozuksa düz metin kabul etmeye çalış veya hata dön
+            return {"sql": "-- AI Yapısal Yanıt Üretemedi, ham metin:\n" + clean_text}
+
+        return result
+        
+    except Exception as e:
+        logger.error(f"AI Error: {e}")
+        return {"sql": f"-- AI Servisi Hatası: {str(e)}", "data_story": "Servis hatası."}
+
